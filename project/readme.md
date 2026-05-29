@@ -345,7 +345,54 @@ graph TD
 
 ### 4. Внедрение для production систем
 
-!!! #### 4.1. Архитектура решения
+#### 4.1. Архитектура решения
+
+Для архитектуры решения была спроектирована UML-диаграмма компонентов:
+
+```mermaid 
+graph TD
+    subgraph Data_Layer [Data Layer]
+        IS[Ingestion Service]
+        DB[(ClickHouse Cluster)]
+    end
+
+    subgraph AI_Service_Layer [AI Service Layer]
+        FS[Feature Store]
+        ML[ML Engine]
+        IAPI[Inference API]
+    end
+
+    subgraph Application_Layer [Application Layer]
+        UI[Admin Dashboard]
+        ERP[ERP Connector]
+    end
+
+    %% Взаимосвязи
+    POS[External POS Systems] -->|JSON Stream| IS
+    IS -->|Batch Write| DB
+    DB -->|Historical Data| FS
+    FS -->|Features| ML
+    ML -->|Model Artifacts| IAPI
+    IAPI -->|REST API| UI
+    IAPI -->|XML/JSON| ERP
+
+    %% Стилизация (необязательно)
+    style DB fill:#f9f,stroke:#333,stroke-width:2px
+    style ML fill:#bbf,stroke:#333,stroke-width:2px
+    style IAPI fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+Описание диаграммы: 
+1) система разделена на независимые слои (Data, AI, App)
+2) лой Data Layer отвечает за прием данных из магазинов и их хранение в ClickHouse.
+3) Слой AI Service Layer изолирован, что позволяет переобучать модели без изменения кода интерфейса.
+
+Описание компонентов:
+1) Ingestion Service: Принимает данные из 500 магазинов в реальном времени.
+2) ClickHouse Cluster: Распределенное хранилище для 2.67 млрд записей.
+3) ML Engine: Модуль на Python (PySpark/Scikit-learn), отвечающий за обучение моделей.
+4) Inference API: Микросервис, который выдает готовые прогнозы по запросу.
+5) ERP Connector: Модуль интеграции с существующей системой заказов сети.
 
 
 
